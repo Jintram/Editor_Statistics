@@ -243,7 +243,7 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
         last_chromosome = current_chromosome
         
     }
-    if (seq_skipped>0) { warning(paste0('Sequences had lacking SPDI, and where skipped! -- ',seq_skipped, ' sequences.')) }
+    if (seq_skipped>0) { warning(paste0('Sequences had lacking SPDI, and were skipped! -- ',seq_skipped, ' sequences.')) }
  
     # Let's reorganize the table a little bit
     # Let's add common column for both forward or reverse edit
@@ -287,15 +287,7 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
 
 theprops = list()
 
-## 'SAKKH_Abe9'
-theprops$SAKKH_Abe9$from = 'A'
-theprops$SAKKH_Abe9$to = 'G'
-theprops$SAKKH_Abe9$pam = 'NNNRRT'
-theprops$SAKKH_Abe9$pamregexp = '...[G|A][G|A]T'
-theprops$SAKKH_Abe9$X = 7
-theprops$SAKKH_Abe9$Y = 8
-theprops$SAKKH_Abe9$L_g   = 22
-theprops$SAKKH_Abe9$L_pam = nchar(props$SAKKH_Abe9$pam)
+
 
 ## 'SAKKH_Abe8'
 theprops$SAKKH_Abe8$from = 'A'
@@ -307,16 +299,85 @@ theprops$SAKKH_Abe8$Y = 14
 theprops$SAKKH_Abe8$L_g   = 22
 theprops$SAKKH_Abe8$L_pam = nchar(props$SAKKH_Abe8$pam)
 
+## 'eNmE-C-Abe8'
+theprops$eNmE_C_Abe8$from = 'A'
+theprops$eNmE_C_Abe8$to = 'G'
+theprops$eNmE_C_Abe8$pam = 'NNNNCN'
+theprops$eNmE_C_Abe8$pamregexp = '....C.'
+theprops$eNmE_C_Abe8$X = 3
+theprops$eNmE_C_Abe8$Y = 15
+theprops$eNmE_C_Abe8$L_g   = 24
+theprops$eNmE_C_Abe8$L_pam = nchar(props$eNmE_C_Abe8$pam)
 
+## 'SpRY-Abe8'
+theprops$SpRY_Abe8$from = 'A'
+theprops$SpRY_Abe8$to = 'G'
+theprops$SpRY_Abe8$pam = 'NNN'
+theprops$SpRY_Abe8$pamregexp = '...' # rather redundant but anyways
+theprops$SpRY_Abe8$X = 3
+theprops$SpRY_Abe8$Y = 11
+theprops$SpRY_Abe8$L_g   = 20
+theprops$SpRY_Abe8$L_pam = nchar(props$SpRY_Abe8$pam)
+
+## 'Sp_Cas9_Abe8'
+theprops$Sp_Cas9_Abe8$from = 'A'
+theprops$Sp_Cas9_Abe8$to = 'G'
+theprops$Sp_Cas9_Abe8$pam = 'NGG'
+theprops$Sp_Cas9_Abe8$pamregexp = '.GG' # rather redundant but anyways
+theprops$Sp_Cas9_Abe8$X = 3
+theprops$Sp_Cas9_Abe8$Y = 11
+theprops$Sp_Cas9_Abe8$L_g   = 20
+theprops$Sp_Cas9_Abe8$L_pam = nchar(props$Sp_Cas9_Abe8$pam)
+
+## New versions from Thomas
+
+## 'SAKKH_Abe9'
+theprops$SAKKH_Abe9$from = 'A'
+theprops$SAKKH_Abe9$to = 'G'
+theprops$SAKKH_Abe9$pam = 'NNNRRT'
+theprops$SAKKH_Abe9$pamregexp = '...[G|A][G|A]T'
+theprops$SAKKH_Abe9$X = 7
+theprops$SAKKH_Abe9$Y = 8
+theprops$SAKKH_Abe9$L_g   = 22
+theprops$SAKKH_Abe9$L_pam = nchar(props$SAKKH_Abe9$pam)
+
+# Not yet information about this one
+# ## 'eNmE_C_Abe9'
+# theprops$eNmE_C_Abe9$from = 'A'
+# theprops$eNmE_C_Abe9$to = 'G'
+# theprops$eNmE_C_Abe9$pam = 'NNNNCN'
+# theprops$eNmE_C_Abe9$pamregexp = '....C.'
+# theprops$eNmE_C_Abe9$X = 3
+# theprops$eNmE_C_Abe9$Y = 15
+# theprops$eNmE_C_Abe9$L_g   = 24
+# theprops$eNmE_C_Abe9$L_pam = nchar(props$eNmE_C_Abe9$pam)
+
+## 'SpRY_Abe9'
+theprops$SpRY_Abe9$from = 'A'
+theprops$SpRY_Abe9$to = 'G'
+theprops$SpRY_Abe9$pam = 'NNN'
+theprops$SpRY_Abe9$pamregexp = '...' # rather redundant but anyways
+theprops$SpRY_Abe9$X = 5
+theprops$SpRY_Abe9$Y = 6
+theprops$SpRY_Abe9$L_g   = 20
+theprops$SpRY_Abe9$L_pam = nchar(props$SpRY_Abe9$pam)
+
+################################################################################
 ## Now obtain statistics
+
+
 the_Stats_Table=list()
 
-the_Stats_Table$SAKKH_Abe8 =
-    get_statistics_for_editor(the_editor = 'SAKKH_Abe8', props = theprops, the_ClinVar_Table = ClinVar_Table_CM_SNV)
-
-the_Stats_Table$SAKKH_Abe9 =
-    get_statistics_for_editor(the_editor = 'SAKKH_Abe9', props = theprops, the_ClinVar_Table = ClinVar_Table_CM_SNV)
-
+# Automatically loop over all editors
+for (the_editor in names(theprops)) {
+    
+    print(paste0('Working on editor ', the_editor))
+    
+    # And collect the statistics
+    the_Stats_Table[[the_editor]] =
+        get_statistics_for_editor(the_editor = the_editor, props = theprops, the_ClinVar_Table = ClinVar_Table_CM_SNV)
+    
+}
 
 ################################################################################
 
@@ -328,6 +389,9 @@ final_df_editors$has_bystander_f[final_df_editors$has_bystander] = 'yes'
 final_df_editors$has_bystander_f[!final_df_editors$has_bystander] = 'no'
 final_df_editors$has_bystander_f = factor(final_df_editors$has_bystander_f, levels=c('yes','no',NA))
 
+# Just renaming for convenience when plotting
+final_df_editors$bystanders = final_df_editors$has_bystander_f
+
 View(final_df_editors)
 
 library(ggplot2)
@@ -338,7 +402,7 @@ ggplot(final_df_editors, aes(x=editor, fill=PAM_present, color=has_bystander))+
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 
-ggplot(final_df_editors[final_df_editors$PAM_present=='yes',], aes(x=editor, fill=has_bystander_f))+
+ggplot(final_df_editors[final_df_editors$PAM_present=='yes',], aes(x=editor, fill=bystanders))+
     geom_bar()+
     scale_fill_manual(values = c('black','grey'))+
     theme_bw()+
