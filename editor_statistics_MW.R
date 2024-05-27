@@ -11,6 +11,8 @@ library(seqinr) # install.packages('seqinr')
 #path_to_genome = "/Volumes/workdrive_m.wehrens_hubrecht/reference_genomes/GRCh38.p14/"
 path_to_genome = "/Users/m.wehrens/Data_notbacked/references/"
 
+output_dir = '/Users/m.wehrens/Data/__other_analyses/ClinVar_Editors_Thomas/'
+
 ################################################################################
 # Some simple functions to convert DNA to (reverse) complement
 
@@ -44,6 +46,11 @@ View(ClinVar_Table_CM)
 
 ClinVar_Table_CM_SNV = ClinVar_Table_CM[ClinVar_Table_CM$Variant.type=='single nucleotide variant',]
 
+# This code is just for a single test
+if (F) {
+    
+}
+
 ################################################################################
 # I (manually) created a little overview of the chromosome files, just to be able
 # to load them later easily.
@@ -62,8 +69,10 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
     # Update table with which locations can be edited
     # First define the from and tos
-    the_ClinVar_Table$MW_nt_WT   = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {strsplit( S , split=':')[[1]][3] })
-    the_ClinVar_Table$MW_nt_var  = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {strsplit( S , split=':')[[1]][4] })
+    the_ClinVar_Table$MW_nt_WT   = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {
+        strsplit( S , split=':')[[1]][3] })
+    the_ClinVar_Table$MW_nt_var  = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {
+        strsplit( S , split=':')[[1]][4] })
     
     # Now check where the editor can be applied
     the_ClinVar_Table$candidate_forward=
@@ -143,7 +152,8 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
             the_ClinVar_Table$fwd_or_rev[row_idx]='forward'
             
             # First obtain the region where potential PAM is located
-            thePAMregion_coordinates = c(( current_SNV_loc + props[[the_editor]]$L_g - Y + 1 ), (current_SNV_loc + props[[the_editor]]$L_g + props[[the_editor]]$L_pam - props[[the_editor]]$X))
+            thePAMregion_coordinates = c(( current_SNV_loc + props[[the_editor]]$L_g - props[[the_editor]]$Y + 1 ), 
+                                         (current_SNV_loc + props[[the_editor]]$L_g + props[[the_editor]]$L_pam - props[[the_editor]]$X))
             thePAMregion = toupper(paste0( chromosome_data_current[[mychromo_files[current_chromosome]]][
                 thePAMregion_coordinates[1]:thePAMregion_coordinates[2]]    , collapse=""))
             # Save that sequence
@@ -293,11 +303,12 @@ theprops = list()
 theprops$SAKKH_Abe8$from = 'A'
 theprops$SAKKH_Abe8$to = 'G'
 theprops$SAKKH_Abe8$pam = 'NNNRRT'
-theprops$SAKKH_Abe8$pamregexp = '...[G|A][G|A]T'
+theprops$SAKKH_Abe8$pamregexp = '...[G|A][G|A]T' 
 theprops$SAKKH_Abe8$X = 3
 theprops$SAKKH_Abe8$Y = 14
 theprops$SAKKH_Abe8$L_g   = 22
-theprops$SAKKH_Abe8$L_pam = nchar(props$SAKKH_Abe8$pam)
+theprops$SAKKH_Abe8$L_pam = nchar(theprops$SAKKH_Abe8$pam)
+theprops$SAKKH_Abe8$dualorsingleAAV = 'single'
 
 ## 'eNmE-C-Abe8'
 theprops$eNmE_C_Abe8$from = 'A'
@@ -307,7 +318,8 @@ theprops$eNmE_C_Abe8$pamregexp = '....C.'
 theprops$eNmE_C_Abe8$X = 3
 theprops$eNmE_C_Abe8$Y = 15
 theprops$eNmE_C_Abe8$L_g   = 24
-theprops$eNmE_C_Abe8$L_pam = nchar(props$eNmE_C_Abe8$pam)
+theprops$eNmE_C_Abe8$L_pam = nchar(theprops$eNmE_C_Abe8$pam)
+theprops$eNmE_C_Abe8$dualorsingleAAV = 'single'
 
 ## 'SpRY-Abe8'
 theprops$SpRY_Abe8$from = 'A'
@@ -317,7 +329,8 @@ theprops$SpRY_Abe8$pamregexp = '...' # rather redundant but anyways
 theprops$SpRY_Abe8$X = 3
 theprops$SpRY_Abe8$Y = 11
 theprops$SpRY_Abe8$L_g   = 20
-theprops$SpRY_Abe8$L_pam = nchar(props$SpRY_Abe8$pam)
+theprops$SpRY_Abe8$L_pam = nchar(theprops$SpRY_Abe8$pam)
+theprops$SpRY_Abe8$dualorsingleAAV = 'dual'
 
 ## 'Sp_Cas9_Abe8'
 theprops$Sp_Cas9_Abe8$from = 'A'
@@ -327,7 +340,8 @@ theprops$Sp_Cas9_Abe8$pamregexp = '.GG' # rather redundant but anyways
 theprops$Sp_Cas9_Abe8$X = 3
 theprops$Sp_Cas9_Abe8$Y = 11
 theprops$Sp_Cas9_Abe8$L_g   = 20
-theprops$Sp_Cas9_Abe8$L_pam = nchar(props$Sp_Cas9_Abe8$pam)
+theprops$Sp_Cas9_Abe8$L_pam = nchar(theprops$Sp_Cas9_Abe8$pam)
+theprops$Sp_Cas9_Abe8$dualorsingleAAV = 'dual'
 
 ## New versions from Thomas
 
@@ -339,7 +353,8 @@ theprops$SAKKH_Abe9$pamregexp = '...[G|A][G|A]T'
 theprops$SAKKH_Abe9$X = 7
 theprops$SAKKH_Abe9$Y = 8
 theprops$SAKKH_Abe9$L_g   = 22
-theprops$SAKKH_Abe9$L_pam = nchar(props$SAKKH_Abe9$pam)
+theprops$SAKKH_Abe9$L_pam = nchar(theprops$SAKKH_Abe9$pam)
+theprops$SAKKH_Abe9$dualorsingleAAV = 'single'
 
 # Not yet information about this one
 # ## 'eNmE_C_Abe9'
@@ -351,6 +366,7 @@ theprops$SAKKH_Abe9$L_pam = nchar(props$SAKKH_Abe9$pam)
 # theprops$eNmE_C_Abe9$Y = 15
 # theprops$eNmE_C_Abe9$L_g   = 24
 # theprops$eNmE_C_Abe9$L_pam = nchar(props$eNmE_C_Abe9$pam)
+# theprops$eNmE_C_Abe9$dualorsingleAAV = 'single'
 
 ## 'SpRY_Abe9'
 theprops$SpRY_Abe9$from = 'A'
@@ -360,7 +376,8 @@ theprops$SpRY_Abe9$pamregexp = '...' # rather redundant but anyways
 theprops$SpRY_Abe9$X = 5
 theprops$SpRY_Abe9$Y = 6
 theprops$SpRY_Abe9$L_g   = 20
-theprops$SpRY_Abe9$L_pam = nchar(props$SpRY_Abe9$pam)
+theprops$SpRY_Abe9$L_pam = nchar(theprops$SpRY_Abe9$pam)
+theprops$SpRY_Abe9$dualorsingleAAV = 'dual'
 
 ################################################################################
 ## Now obtain statistics
@@ -371,6 +388,7 @@ the_Stats_Table=list()
 # Automatically loop over all editors
 for (the_editor in names(theprops)) {
     
+    print('==============================')
     print(paste0('Working on editor ', the_editor))
     
     # And collect the statistics
@@ -379,9 +397,17 @@ for (the_editor in names(theprops)) {
     
 }
 
+# format(Sys.time(), "%a %b %d %X %Y")
+
+current_time=format(Sys.time(), "%Y-%b-%d_%X")
+saveRDS(object = the_Stats_Table, file = paste0(output_dir, 'alleditors__the_Stats_Table__',current_time,'.Rds'))
+    # the_Stats_Table = readRDS("/Users/m.wehrens/Data/__other_analyses/ClinVar_Editors_Thomas/alleditors__the_Stats_Table__2024-Mar-01_17-31-13.Rds")
+
 ################################################################################
 
-final_df_editors = rbind(the_Stats_Table$SAKKH_Abe8, the_Stats_Table$SAKKH_Abe9)
+# final_df_editors = rbind(the_Stats_Table$SAKKH_Abe8, the_Stats_Table$SAKKH_Abe9)
+
+final_df_editors = Reduce( f = rbind, x = the_Stats_Table)
 
 final_df_editors$has_bystander = final_df_editors$bystander_count_min>0
 final_df_editors$has_bystander_f = NA
@@ -396,19 +422,19 @@ View(final_df_editors)
 
 library(ggplot2)
 
-ggplot(final_df_editors, aes(x=editor, fill=PAM_present, color=has_bystander))+
-    geom_bar()+
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+# ggplot(final_df_editors, aes(x=editor, fill=PAM_present, color=has_bystander))+
+#     geom_bar()+
+#     theme_bw()+
+#     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
+p = ggplot(final_df_editors[final_df_editors$PAM_present=='yes',], aes(x=editor, fill=bystanders))+
+        geom_bar()+
+        scale_fill_manual(values = c('black','grey'))+
+        theme_bw()+
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-ggplot(final_df_editors[final_df_editors$PAM_present=='yes',], aes(x=editor, fill=bystanders))+
-    geom_bar()+
-    scale_fill_manual(values = c('black','grey'))+
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-    
+p
+ggsave(plot=p, filename = paste0(output_dir, 'some_editor_stats.pdf'), width = 171/2, height = 171/2, units = 'mm', device = cairo_pdf)
     
 
 
