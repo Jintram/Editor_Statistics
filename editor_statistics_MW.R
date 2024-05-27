@@ -7,6 +7,7 @@
 # /Users/m.wehrens/Data/__resources/ClinVar
 
 library(seqinr) # install.packages('seqinr')
+library(stringr)
 
 #path_to_genome = "/Volumes/workdrive_m.wehrens_hubrecht/reference_genomes/GRCh38.p14/"
 path_to_genome = "/Users/m.wehrens/Data_notbacked/references/"
@@ -37,6 +38,25 @@ get_complement_sequence = function(sequence) {
     return(sequence_revcom)
 }
 
+# I couldn't find how to return multiple partially overlapping matching
+# in a sensible way, so this is a bit of a hack..
+
+findallmatches_mw = function(thestring, thepattern) {
+    hits=c()
+    nchar_thepattern=nchar(thepattern)
+    for (start_pos in 1:nchar(thestring)){
+        if (1 == regexpr(pattern = thepattern, 
+                         text = substr(   thestring, start = start_pos, stop = start_pos+nchar_thepattern-1   )))
+            {hits=c(hits, start_pos)}
+    }
+    return(hits)
+}
+
+# findallmatches_mw('aabaaa','a')
+# findallmatches_mw('aabaaa','aa')
+# findallmatches_mw('aabaaa','a.a')
+
+
 ################################################################################
 # Load the applicable ClinVar table
 
@@ -45,11 +65,6 @@ ClinVar_Table_CM =
 View(ClinVar_Table_CM)
 
 ClinVar_Table_CM_SNV = ClinVar_Table_CM[ClinVar_Table_CM$Variant.type=='single nucleotide variant',]
-
-# This code is just for a single test
-if (F) {
-    
-}
 
 ################################################################################
 # I (manually) created a little overview of the chromosome files, just to be able
@@ -65,20 +80,31 @@ mychromo_files
 ################################################################################
 # Function to create a table with information
 
+# Testing purposes
+# the_ClinVar_Table = ClinVar_Table_CM_SNV[ClinVar_Table_CM_SNV$Name=='NM_000256.3(MYBPC3):c.2827C>T (p.Arg943Ter)',]
+# props=theprops
+# the_editor='Sp_Cas9_Abe8'
+
 get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
     # Update table with which locations can be edited
     # First define the from and tos
+    # From the table, extract the wild type nucleotide identity
     the_ClinVar_Table$MW_nt_WT   = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {
         strsplit( S , split=':')[[1]][3] })
+    # From the table, extract the variant nucleotide identity
     the_ClinVar_Table$MW_nt_var  = sapply( the_ClinVar_Table$Canonical.SPDI, function(S) {
         strsplit( S , split=':')[[1]][4] })
     
     # Now check where the editor can be applied
-    the_ClinVar_Table$candidate_forward=
-        (props[[the_editor]]$from == the_ClinVar_Table$MW_nt_var & the_ClinVar_Table$MW_nt_WT == props[[the_editor]]$to)
+    # Note that independently of the strandedness of the gene, the editor can be applied to 
+    # both strands
+    the_ClinVar_Table$candidate_forward =
+        (props[[the_editor]]$from == the_ClinVar_Table$MW_nt_var & # does the wild type nucleotide match the editor's converted nucleotide
+             the_ClinVar_Table$MW_nt_WT == props[[the_editor]]$to) # does the variant wilde type nucleotide match the editor's "input" nucleotide
     the_ClinVar_Table$candidate_revcom=
-        (props[[the_editor]]$from == revco[the_ClinVar_Table$MW_nt_var] & revco[the_ClinVar_Table$MW_nt_WT] == props[[the_editor]]$to)
+        (props[[the_editor]]$from == revco[the_ClinVar_Table$MW_nt_var] & # as above, but reverse complement
+             revco[the_ClinVar_Table$MW_nt_WT] == props[[the_editor]]$to) # as above, but revcom
         # Note that the strandedness is important for genes in the table.
         # For example, entry 105, in the cDNA has a G>A change, 
         # NM_001276345.2(TNNT2):c.891G>A (p.Trp297Ter)
@@ -90,15 +116,6 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
         #
         # Sanity check, both should never be true, so no 2 values expected when summing
         # table(the_ClinVar_Table$candidate_forward+the_ClinVar_Table$candidate_revcom)
-    
-    if (F) {
-        # Convenient to identify the nucleotide of interest
-        toupper(paste0( chromosome_data_current[[mychromo_files[current_SNV_chr]]][
-                ( current_SNV_loc - 10 ):(current_SNV_loc + 10)]    , collapse=""))
-        toupper(paste0( chromosome_data_current[[mychromo_files[current_SNV_chr]]][
-                ( current_SNV_loc - 3 ):(current_SNV_loc + 3)]    , collapse=""))    
-    }
-    
     
     # ===
     # Now retrieve the accompanying PAM sequences
@@ -146,9 +163,22 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
             
             current_SNV_loc = as.double(the_ClinVar_Table$GRCh38Location[row_idx])
             
+            # This code is only here for testing/development to test specific cases
+            # Convenient to identify the nucleotide of interest
+            if (F) {
+                # This just displays the surrounding sequence in the region of the mutation
+                # In ape, it is
+                # convenient to search for this piece:
+                toupper(paste0( chromosome_data_current[[mychromo_files[current_chromosome]]][
+                        ( current_SNV_loc - 10 ):(current_SNV_loc + 10)]    , collapse=""))
+                # convenient to zoom in using only 6 nts:
+                toupper(paste0( chromosome_data_current[[mychromo_files[current_chromosome]]][
+                        ( current_SNV_loc - 3 ):(current_SNV_loc + 3)]    , collapse=""))    
+            }
+            
             # save which strand this mutation could be edited
             # note that this assumes only one strand will ever work, which
-            # might not be true for all editors..
+            # is probably true for all editors though..
             the_ClinVar_Table$fwd_or_rev[row_idx]='forward'
             
             # First obtain the region where potential PAM is located
@@ -160,7 +190,11 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
             the_ClinVar_Table$PAM_region_fwd[row_idx] = thePAMregion
     
             # now annotate whether it's editable given the PAM sequence
-            PAM_locations = gregexpr(pattern = props[[the_editor]]$pamregexp, text = thePAMregion)[[1]][1]
+            # bugfix! -- gregexpr doesn't return overlapping patterns!
+            # PAM_locations = gregexpr(pattern = props[[the_editor]]$pamregexp, text = thePAMregion)[[1]][1]
+            # # stri_locate_all_regex(str =thePAMregion, pattern =props[[the_editor]]$pamregexp, overlap=T) # doesn't work either
+            # this does work, probably mutch slower ..
+            PAM_locations = findallmatches_mw(thestring = thePAMregion, thepattern = props[[the_editor]]$pamregexp)
             
             # Save hits; these are now relative to the PAM region
             the_ClinVar_Table$PAM_locations_fwd[row_idx] = 
