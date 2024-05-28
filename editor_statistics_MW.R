@@ -1,10 +1,40 @@
 
 # See also document 
-# /Users/m.wehrens/Documents/Labwork/Digital_journal_ELAB_BIOINF/2024-02_Thomas-Editors-ClinVar.docx
+# /Users/m.wehrens/Documents/Project_files/Projects/SIDE_PROJECTS/2024-02_Thomas-Editors-ClinVar-notes.docx
 # for notes.
 
 # See also directory:
 # /Users/m.wehrens/Data/__resources/ClinVar
+
+######
+# Downloading the ClinVar file:
+
+#Downloaded ClinVar file from:
+#https://www.ncbi.nlm.nih.gov/clinvar/
+#https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+# 
+# Note that we can also filter this database, e.g. looking for cardiomyopathy in the disease/phenotype field. https://www.ncbi.nlm.nih.gov/clinvar?term=cardiomyopathy%5BDisease%2FPhenotype%5D 
+# This yields 60990 results, which can be further filtered for “pathogenic” only, yielding 2835 mutations.
+# See the file 
+# /Users/m.wehrens/Data/__resources/ClinVar/clinvar_result_cardiomyopathy_pathogenic.txt
+# This is a slightly different but also convenient file format.
+# Example how file looks:
+# Name	Gene(s)	Protein change	Condition(s)	Accession	GRCh37Chromosome	GRCh37Location	GRCh38Chromosome	GRCh38Location	VariationID	AlleleID(s)	dbSNP ID	Canonical SPDI	Variant type	Molecular consequence	Germline classification	Germline date last evaluated	Germline review status	Somatic clinical impact	Somatic clinical impact date last evaluated	Somatic clinical impact review status	Oncogenicity classification	Oncogenicity date last evaluated	Oncogenicity review status	
+# NM_022114.4(PRDM16):c.1573dup (p.Arg525fs)	PRDM16			VCV000060725	1	3328329 - 3328330	1	3411765 - 3411766	60725	75285	rs886041395	NC_000001.11:3411765:CCCCC:CCCCCC	Duplication	frameshift variant	Pathogenic	Jan 1, 2018	criteria provided, multiple submitters, no conflicts			
+
+######
+# Downloading the reference genome
+#
+#I downloaded GRCh38.p14 (latest version per 13.2.2024)
+#https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.40/
+#https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/latest_assembly_versions/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz
+#
+# Command I used to download the chromosome:
+# curl --remote-name --remote-time https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/latest_assembly_versions/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz
+#
+# THE REFERENCE GENOME WAS SPLIT INTO SINGLE FILES USING PYTHON --> CHECK MY WORK DISK FOR THESE FILES!
+
+################################################################################
 
 library(seqinr) # install.packages('seqinr')
 library(stringr)
@@ -81,9 +111,15 @@ mychromo_files
 # Function to create a table with information
 
 # Testing purposes
-# the_ClinVar_Table = ClinVar_Table_CM_SNV[ClinVar_Table_CM_SNV$Name=='NM_000256.3(MYBPC3):c.2827C>T (p.Arg943Ter)',]
-# props=theprops
-# the_editor='Sp_Cas9_Abe8'
+if (F) {
+    the_ClinVar_Table = 
+        ClinVar_Table_CM_SNV[ClinVar_Table_CM_SNV$Name %in% 
+                                 c('NM_000256.3(MYBPC3):c.2827C>T (p.Arg943Ter)',
+                                   'NM_001103.4(ACTN2):c.355G>A (p.Ala119Thr)',
+                                   'NM_170707.4(LMNA):c.673C>T (p.Arg225Ter)'),]
+    props=theprops
+    the_editor='Sp_Cas9_Abe8'
+}
 
 get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
@@ -131,12 +167,17 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     the_ClinVar_Table$fwd_or_rev='none'
     the_ClinVar_Table$PAM_bystander_count_fwd_min=NA
     the_ClinVar_Table$PAM_bystander_count_rev_min=NA
+    the_ClinVar_Table$guides_fwd = NA
+    the_ClinVar_Table$annotated_sequence_list_fwd = NA
+    the_ClinVar_Table$guides_rev = NA
+    the_ClinVar_Table$annotated_sequence_list_rev = NA
     last_chromosome='none' # last_chromosome = '1'; current_chromosome='1'
     for (row_idx in 1:nrow(the_ClinVar_Table)) {
         # row_idx=1
         # row_idx=105
         # row_idx=37
         # row_idx=40
+        # row_idx=2
     
         # print(paste0(row_idx))
         
@@ -198,32 +239,56 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
             
             # Save hits; these are now relative to the PAM region
             the_ClinVar_Table$PAM_locations_fwd[row_idx] = 
-                if (PAM_locations==-1) {NA} else {toString(PAM_locations)}
+                if (is.null(PAM_locations)) {NA} else {toString(PAM_locations)}
             
             # now count the number of bystander edits
             # This needs to be done for the region corresponding to the PAM hit
-            if (PAM_locations != -1) {
-                #for (current_PAM_pos in PAM_locations) {
-                bystander_counts=
-                    unlist(sapply(PAM_locations, function(current_PAM_pos) {
+            if (!is.null(PAM_locations)) {
+                #bystander_counts=
+                #    unlist(sapply(PAM_locations, function(current_PAM_pos) {
+                bystander_count_list = c()
+                guide_nucleotides_str_list = c()
+                annotated_sequence_list = c()
+                for (current_PAM_pos in PAM_locations) {
                         #current_PAM_pos=PAM_locations[1] # testing purposes
+                        #current_PAM_pos=PAM_locations[2] # testing purposes
                         PAM_loc_start = thePAMregion_coordinates[1]+current_PAM_pos-1
                         guide_locations = (PAM_loc_start-1-props[[the_editor]]$L_g+1):(PAM_loc_start-1)
                         guide_nucleotides = chromosome_data_current[[mychromo_files[current_chromosome]]][guide_locations]
-                        # paste0(guide_nucleotides, collapse="")
+                        guide_nucleotides_str = paste0(guide_nucleotides, collapse="")
                         edit_target_sequence = guide_nucleotides[props[[the_editor]]$X:props[[the_editor]]$Y]
                         bystander_count = sum(sapply(edit_target_sequence, toupper)==props[[the_editor]]$from)
                             # Note that the ref sequence contains the wild type sequence.
-                        return(bystander_count)
-                    }))
+                        
+                        bystander_count_list   = c(bystander_count_list, bystander_count)
+                        guide_nucleotides_str_list = c(guide_nucleotides_str_list, guide_nucleotides_str)
+                        
+                        # Create an annotated string for convenience
+                        # where's the actual mutation that's targeted?
+                        # merge strings
+                        guide_left   = substr(guide_nucleotides_str, 1 , props[[the_editor]]$X-1 )
+                        edit_target_sequence_str = paste0(edit_target_sequence, collapse="")
+                        mut_in_tgt = nchar(edit_target_sequence_str) - current_PAM_pos + 1
+                        guide_window = paste0(
+                            substr(edit_target_sequence_str, 1, mut_in_tgt-1), 
+                            toupper(substr(edit_target_sequence_str,  mut_in_tgt, mut_in_tgt)), # the targeted mutation depends on window shift, determined by PAM position
+                            substr(edit_target_sequence_str,  mut_in_tgt+1, length(edit_target_sequence)),collapse="")
+                        guide_right  = substr(guide_nucleotides_str, props[[the_editor]]$Y+1 , length(guide_nucleotides) )
+                        PAM_ann      = substr(thePAMregion, current_PAM_pos, current_PAM_pos + props[[the_editor]]$L_pam - 1)
+                        annotated_sequence = paste0('[',guide_left, '[', guide_window, ']', guide_right,']', PAM_ann)
+                        annotated_sequence_list = c(annotated_sequence_list, annotated_sequence)
+                }
                 #}
-                the_ClinVar_Table$PAM_bystander_count_fwd[row_idx] = toString(bystander_counts)
-                the_ClinVar_Table$PAM_bystander_count_fwd_min[row_idx] = min(bystander_counts)
+                the_ClinVar_Table$PAM_bystander_count_fwd[row_idx] = toString(bystander_count_list)
+                the_ClinVar_Table$PAM_bystander_count_fwd_min[row_idx] = min(bystander_count_list)
+                the_ClinVar_Table$guides_fwd[row_idx] = toString(guide_nucleotides_str_list)
+                the_ClinVar_Table$annotated_sequence_list_fwd[row_idx] = toString(annotated_sequence_list)
             }
         }
             
         
         if (the_ClinVar_Table$candidate_revcom[row_idx]) {
+            # REVERSE CASE
             
             # row_idx=36
             
@@ -247,34 +312,60 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
             
             # now annotate whether it's editable given the PAM sequence
-            PAM_locations = gregexpr(pattern = props[[the_editor]]$pamregexp, text = thePAMregion)[[1]][1]
+            #PAM_locations = gregexpr(pattern = props[[the_editor]]$pamregexp, text = thePAMregion)[[1]][1]
+            PAM_locations = findallmatches_mw(thestring = thePAMregion, thepattern = props[[the_editor]]$pamregexp)
             
             # Save hits; these are now relative to the PAM region
             the_ClinVar_Table$PAM_locations_rev[row_idx] = 
-                if (PAM_locations==-1) {NA} else {toString(PAM_locations)}
+                if (is.null(PAM_locations)) {NA} else {toString(PAM_locations)}
     
             
             # now count the number of bystander edits
             # This needs to be done for the region corresponding to the PAM hit
             # THIS NEEDS TO BE UPDATED FOR REVERSE COORDINATES ... blergh
-            if (PAM_locations != -1) {
-                #for (current_PAM_pos in PAM_locations) {
-                bystander_counts=
-                    unlist(sapply(PAM_locations, function(current_PAM_pos) {
+            if (!is.null(PAM_locations)) {
+                
+                bystander_count_list   = c()
+                guide_nucleotides_str_list = c()
+                annotated_sequence_list = c()
+                for (current_PAM_pos in PAM_locations) {
+                #bystander_counts=
+                #    unlist(sapply(PAM_locations, function(current_PAM_pos) {
                         #current_PAM_pos=PAM_locations[1] # testing purposes
                         PAM_loc_start = thePAMregion_coordinates[2]-current_PAM_pos
                         guide_locations = (PAM_loc_start+1):(PAM_loc_start+1+props[[the_editor]]$L_g-1)
-                        guide_nucleotides = get_revcom_charvector(
-                            chromosome_data_current[[mychromo_files[current_chromosome]]][guide_locations])
-                        # paste0(guide_nucleotides, collapse="")
+                        guide_nucleotides = tolower(get_revcom_charvector(
+                            chromosome_data_current[[mychromo_files[current_chromosome]]][guide_locations]))
+                        guide_nucleotides_str = paste0(guide_nucleotides, collapse="")
                         edit_target_sequence = guide_nucleotides[props[[the_editor]]$X:props[[the_editor]]$Y]
                         bystander_count = sum(sapply(edit_target_sequence, toupper)==props[[the_editor]]$from)
                             # Note that the ref sequence contains the wild type sequence.
-                        return(bystander_count)
-                    }))
-                #}
-                the_ClinVar_Table$PAM_bystander_count_rev[row_idx] = toString(bystander_counts)
-                the_ClinVar_Table$PAM_bystander_count_rev_min[row_idx] = min(bystander_counts)
+                        #return(bystander_count)
+                #    }))
+                        bystander_count_list   = c(bystander_count_list, bystander_count)
+                        guide_nucleotides_str_list = c(guide_nucleotides_str_list, guide_nucleotides_str)
+                        
+                        # THIS NEEDS TO BE UPDATED
+                        # Create an annotated string for convenience
+                        # where's the actual mutation that's targeted?
+                        # merge strings
+                        guide_left   = substr(guide_nucleotides_str, 1 , props[[the_editor]]$X-1 )
+                        edit_target_sequence_str = paste0(edit_target_sequence, collapse="")
+                        mut_in_tgt = nchar(edit_target_sequence_str) - current_PAM_pos + 1
+                        guide_window = paste0(
+                            substr(edit_target_sequence_str, 1, mut_in_tgt-1), 
+                            toupper(substr(edit_target_sequence_str,  mut_in_tgt, mut_in_tgt)), # the targeted mutation depends on window shift, determined by PAM position
+                            substr(edit_target_sequence_str,  mut_in_tgt+1, length(edit_target_sequence)),collapse="")
+                        guide_right  = substr(guide_nucleotides_str, props[[the_editor]]$Y+1 , length(guide_nucleotides) )
+                        PAM_ann      = substr(thePAMregion, current_PAM_pos, current_PAM_pos + props[[the_editor]]$L_pam - 1)
+                        annotated_sequence = paste0('[',guide_left, '[', guide_window, ']', guide_right,']', PAM_ann)
+                        annotated_sequence_list = c(annotated_sequence_list, annotated_sequence)
+                }
+                
+                the_ClinVar_Table$PAM_bystander_count_rev[row_idx] = toString(bystander_count_list)
+                the_ClinVar_Table$PAM_bystander_count_rev_min[row_idx] = min(bystander_count_list)
+                the_ClinVar_Table$guides_rev[row_idx] = toString(guide_nucleotides_str_list)
+                the_ClinVar_Table$annotated_sequence_list_rev[row_idx] = toString(annotated_sequence_list)
             }
             
         } 
@@ -300,18 +391,25 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     the_ClinVar_Table$PAM_locations    = NA
     the_ClinVar_Table$bystander_count  = NA
     the_ClinVar_Table$bystander_count_min = NA
+    the_ClinVar_Table$guides = NA
+    the_ClinVar_Table$annotated_sequence_list = NA
     # fwd
     fwd_idxs = the_ClinVar_Table$fwd_or_rev=='forward'
     the_ClinVar_Table$PAM_region[fwd_idxs]       = the_ClinVar_Table$PAM_region_fwd[fwd_idxs]
     the_ClinVar_Table$PAM_locations[fwd_idxs]        = the_ClinVar_Table$PAM_locations_fwd[fwd_idxs]
     the_ClinVar_Table$bystander_count[fwd_idxs]  = the_ClinVar_Table$PAM_bystander_count_fwd[fwd_idxs]
     the_ClinVar_Table$bystander_count_min[fwd_idxs] = the_ClinVar_Table$PAM_bystander_count_fwd_min[fwd_idxs]
+    the_ClinVar_Table$guides[fwd_idxs] = the_ClinVar_Table$guides_fwd[fwd_idxs]
+    the_ClinVar_Table$annotated_sequence_list[fwd_idxs] = the_ClinVar_Table$annotated_sequence_list_fwd[fwd_idxs]
     # rev
     rev_idxs = the_ClinVar_Table$fwd_or_rev=='reverse'
     the_ClinVar_Table$PAM_region[rev_idxs]       = the_ClinVar_Table$PAM_region_rev[rev_idxs]
     the_ClinVar_Table$PAM_locations[rev_idxs]        = the_ClinVar_Table$PAM_locations_rev[rev_idxs]
     the_ClinVar_Table$bystander_count[rev_idxs]  = the_ClinVar_Table$PAM_bystander_count_rev[rev_idxs]
     the_ClinVar_Table$bystander_count_min[rev_idxs] = the_ClinVar_Table$PAM_bystander_count_rev_min[rev_idxs]
+    the_ClinVar_Table$guides[rev_idxs] = the_ClinVar_Table$guides_rev[rev_idxs]
+    the_ClinVar_Table$annotated_sequence_list[rev_idxs] = the_ClinVar_Table$annotated_sequence_list_rev[rev_idxs]
+    
     
     # Also create a binary output
     the_ClinVar_Table$PAM_present = c('no','yes')[1+1*!is.na(the_ClinVar_Table$PAM_locations)]
@@ -320,7 +418,7 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
     # now return the table of interest
     return(
-        the_ClinVar_Table[, c('Name','Canonical.SPDI','editor','fwd_or_rev','PAM_region','PAM_present','PAM_locations','bystander_count','bystander_count_min','MW_rowidx')])
+        the_ClinVar_Table[, c('Name','Canonical.SPDI','editor','fwd_or_rev','PAM_region','PAM_present','PAM_locations','bystander_count','bystander_count_min','MW_rowidx','guides','annotated_sequence_list')])
         # View(the_ClinVar_Table[, c('Name','Canonical.SPDI','fwd_or_rev','PAM_region','PAM_locations','bystander_count','MW_rowidx')])
 }
 
@@ -330,8 +428,6 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
 # Editor properties
 
 theprops = list()
-
-
 
 ## 'SAKKH_Abe8'
 theprops$SAKKH_Abe8$from = 'A'
@@ -421,6 +517,8 @@ the_Stats_Table=list()
 
 # Automatically loop over all editors
 for (the_editor in names(theprops)) {
+    
+    # the_editor = "Sp_Cas9_Abe8"
     
     print('==============================')
     print(paste0('Working on editor ', the_editor))
