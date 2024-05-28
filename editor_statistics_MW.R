@@ -1,6 +1,7 @@
 
-# See also document 
+# See also documents
 # /Users/m.wehrens/Documents/Project_files/Projects/SIDE_PROJECTS/2024-02_Thomas-Editors-ClinVar-notes.docx
+# /Users/m.wehrens/Documents/Presentations/POWERPOINT/_SIDE_PROJECTS/2024_01_Thomas_Editors.pptx
 # for notes.
 
 # See also directory:
@@ -322,7 +323,6 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
             
             # now count the number of bystander edits
             # This needs to be done for the region corresponding to the PAM hit
-            # THIS NEEDS TO BE UPDATED FOR REVERSE COORDINATES ... blergh
             if (!is.null(PAM_locations)) {
                 
                 bystander_count_list   = c()
@@ -345,7 +345,6 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
                         bystander_count_list   = c(bystander_count_list, bystander_count)
                         guide_nucleotides_str_list = c(guide_nucleotides_str_list, guide_nucleotides_str)
                         
-                        # THIS NEEDS TO BE UPDATED
                         # Create an annotated string for convenience
                         # where's the actual mutation that's targeted?
                         # merge strings
@@ -393,6 +392,8 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     the_ClinVar_Table$bystander_count_min = NA
     the_ClinVar_Table$guides = NA
     the_ClinVar_Table$annotated_sequence_list = NA
+    # add one extra piece of information
+    the_ClinVar_Table$editor_dual_single_AAV = props[[the_editor]]$dualorsingleAAV
     # fwd
     fwd_idxs = the_ClinVar_Table$fwd_or_rev=='forward'
     the_ClinVar_Table$PAM_region[fwd_idxs]       = the_ClinVar_Table$PAM_region_fwd[fwd_idxs]
@@ -418,7 +419,9 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
     
     # now return the table of interest
     return(
-        the_ClinVar_Table[, c('Name','Canonical.SPDI','editor','fwd_or_rev','PAM_region','PAM_present','PAM_locations','bystander_count','bystander_count_min','MW_rowidx','guides','annotated_sequence_list')])
+        the_ClinVar_Table[, c('Name','Canonical.SPDI','editor','fwd_or_rev','PAM_region',
+                              'PAM_present','PAM_locations','bystander_count','bystander_count_min','MW_rowidx','guides','annotated_sequence_list',
+                              'Molecular.consequence','editor_dual_single_AAV')])
         # View(the_ClinVar_Table[, c('Name','Canonical.SPDI','fwd_or_rev','PAM_region','PAM_locations','bystander_count','MW_rowidx')])
 }
 
