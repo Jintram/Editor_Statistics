@@ -36,7 +36,8 @@
 # Command I used to download the chromosome:
 # curl --remote-name --remote-time https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/latest_assembly_versions/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz
 #
-# THE REFERENCE GENOME WAS SPLIT INTO SINGLE FILES USING PYTHON --> CHECK MY WORK DISK FOR THESE FILES!
+# I split the genome file into multiple files per chromosome, using the script ./genome_processing/split_the_file.py
+# (edit the filepaths there to process the file).
 
 ################################################################################
 
