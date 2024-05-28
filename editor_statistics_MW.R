@@ -13,9 +13,9 @@
 ######
 # Downloading the ClinVar file:
 
-#Downloaded ClinVar file from:
-#https://www.ncbi.nlm.nih.gov/clinvar/
-#https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+# Downloaded ClinVar file from:
+# https://www.ncbi.nlm.nih.gov/clinvar/
+# https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
 # 
 # Note that we can also filter this database, e.g. looking for cardiomyopathy in the disease/phenotype field. https://www.ncbi.nlm.nih.gov/clinvar?term=cardiomyopathy%5BDisease%2FPhenotype%5D 
 # This yields 60990 results, which can be further filtered for “pathogenic” only, yielding 2835 mutations.
@@ -95,7 +95,10 @@ findallmatches_mw = function(thestring, thepattern) {
 # Load the applicable ClinVar table
 
 ClinVar_Table_CM =
-    read.table('/Users/m.wehrens/Data/__resources/ClinVar/clinvar_result_cardiomyopathy_pathogenic.txt', sep='\t', header=1)
+    read.table('/Users/m.wehrens/Data/__resources/ClinVar/clinvar_result_cardiomyopathy_pathogenic_202405.txt', sep='\t', header=1)
+    # read.table('/Users/m.wehrens/Data/__resources/ClinVar/clinvar_result_cardiomyopathy.txt', sep='\t', header=1)
+    # read.table('/Users/m.wehrens/Data/__resources/ClinVar/clinvar_result_cardiomyopathy_pathogenic-likely-pathogenic_202405.txt', sep='\t', header=1)
+    
 View(ClinVar_Table_CM)
 
 ClinVar_Table_CM_SNV = ClinVar_Table_CM[ClinVar_Table_CM$Variant.type=='single nucleotide variant',]
@@ -273,6 +276,7 @@ get_statistics_for_editor = function(the_editor, props, the_ClinVar_Table) {
                         guide_left   = substr(guide_nucleotides_str, 1 , props[[the_editor]]$X-1 )
                         edit_target_sequence_str = paste0(edit_target_sequence, collapse="")
                         mut_in_tgt = nchar(edit_target_sequence_str) - current_PAM_pos + 1
+                        
                         guide_window = paste0(
                             substr(edit_target_sequence_str, 1, mut_in_tgt-1), 
                             toupper(substr(edit_target_sequence_str,  mut_in_tgt, mut_in_tgt)), # the targeted mutation depends on window shift, determined by PAM position
