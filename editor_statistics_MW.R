@@ -1,4 +1,7 @@
 
+# github repo related to this project:
+# https://github.com/Jintram/Editor_Statistics
+
 # See also documents
 # /Users/m.wehrens/Documents/Project_files/Projects/SIDE_PROJECTS/2024-02_Thomas-Editors-ClinVar-notes.docx
 # /Users/m.wehrens/Documents/Presentations/POWERPOINT/_SIDE_PROJECTS/2024_01_Thomas_Editors.pptx
