@@ -567,11 +567,13 @@ saveRDS(object = the_Stats_Table, file = paste0(output_dir, 'alleditors__the_Sta
     # the_Stats_Table = readRDS("/Users/m.wehrens/Data/__other_analyses/ClinVar_Editors_Thomas/alleditors__the_Stats_Table__2024-Mar-01_17-31-13.Rds")
 
 ################################################################################
+# Merge all tables and create further statistics
 
+# This merges all of the data tables
 # final_df_editors = rbind(the_Stats_Table$SAKKH_Abe8, the_Stats_Table$SAKKH_Abe9)
-
 final_df_editors = Reduce( f = rbind, x = the_Stats_Table)
 
+# Add some more summary statistics
 final_df_editors$has_bystander = final_df_editors$bystander_count_min>0
 final_df_editors$has_bystander_f = NA
 final_df_editors$has_bystander_f[final_df_editors$has_bystander] = 'yes'
@@ -581,8 +583,24 @@ final_df_editors$has_bystander_f = factor(final_df_editors$has_bystander_f, leve
 # Just renaming for convenience when plotting
 final_df_editors$bystanders = final_df_editors$has_bystander_f
 
+# Show the final overview
 View(final_df_editors)
+    # What do the columns mean?
+    # Name = name of the variant as in clinvar table
+    # Canonical.SPDI = annotation of the mutation as in clinvar table
+    # editor = which editor was used for this row
+    # fwd_or_rev = forward or reverse strand of the chromosome that can be edited
+    # PAM_region = given the constraints of the editor, in which sequence should a PAM be present for editing to occur properly somewhere in the editing window
+    # PAM_present = is PAM present in PAM_region?
+    # PAM_locations = location of the PAM in the PAM_region
+    # bystander_count = number of potential bystander edits in the editing window
+    # bystander_count_min = if there are different options for guide, what is the minimal number of bystanders?
+    # MW_rowidx = just numbering the rows
+    # has_bystander = is there a bystander mutation?
+    # has_bystander_f = same as above, but factor parameter with options yes and no
+    # bystanders = synonym of has_bystander_f
 
+# Now add some plots
 library(ggplot2)
 
 # ggplot(final_df_editors, aes(x=editor, fill=PAM_present, color=has_bystander))+
